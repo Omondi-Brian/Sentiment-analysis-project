@@ -1,4 +1,5 @@
 from fastapi import FastAPI, File, UploadFile
+from api.db import get_connection
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 import pickle
@@ -227,3 +228,11 @@ def analytics_model_compare():
 
     set_cache("model_compare", result)
     return JSONResponse(content=result)
+@app.get("/test-db")
+def test_db():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT NOW();")
+    result = cur.fetchone()
+    conn.close()
+    return {"db_time": result[0]}
