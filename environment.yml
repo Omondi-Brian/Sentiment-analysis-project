@@ -1,0 +1,25 @@
+name: sentiment_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy=1.26.4
+  - pandas=2.2.1
+  - scikit-learn=1.5.0
+  - matplotlib
+  - nltk
+  - streamlit=1.50.0
+  - wordcloud
+  - requests
+  - pyarrow=14.0.2
+  - pip
+  - pip:
+      - fastapi==0.115.0
+      - uvicorn==0.32.0
+      - tensorflow-cpu==2.19.1
+      - keras==3.5.0
+      - tensorboard==2.19.0
+      - protobuf==3.20.3
+      - tensorflow-estimator==2.15.0
+     
