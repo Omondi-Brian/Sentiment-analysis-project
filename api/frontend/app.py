@@ -1,4 +1,5 @@
 import streamlit as st
+from db import get_connection
 
 st.set_page_config(
     page_title="Safaricom Sentiment Dashboard",
@@ -40,3 +41,12 @@ with col4:
 if st.button("🚀 Get Started", key="start_btn", type="primary"):
     st.switch_page("pages/Live_Analysis.py")  
 st.write("Use the sidebar to explore tools.")
+st.markdown("### Recent Sentiment Records")
+
+conn = get_connection()
+cursor = conn.cursor(dictionary=True)
+cursor.execute("SELECT TweetText, LSTM_Sentiment, LR_Sentiment, Flagged_For_Review FROM ANALYSIS_RECORD LIMIT 10")
+rows = cursor.fetchall()
+conn.close()
+
+st.dataframe(rows)

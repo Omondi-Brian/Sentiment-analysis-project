@@ -1,0 +1,9 @@
+# Created by pytest automatically.
+embeddings/
+models/
+backend/Data/processed/
+backend/Data/safaricom_tweets_enhanced.csv
+api/__pycache__/
+backend/__pycache__/
+*.pyc
+

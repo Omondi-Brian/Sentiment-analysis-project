@@ -1,0 +1,6 @@
+{
+    "python.defaultInterpreterPath": "C:/Users/omond/miniconda3/envs/sentiment_env/python.exe",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    }
+}

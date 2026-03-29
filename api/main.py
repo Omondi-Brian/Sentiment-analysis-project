@@ -89,6 +89,28 @@ def predict_lstm_batch(texts):
 def predict(input: TextInput):
     baseline_pred = predict_baseline_batch([input.text])[0]
     lstm_pred, conf = predict_lstm_batch([input.text])
+
+    # Save to DB
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO ANALYSIS_RECORD
+        (TweetID, TweetText, DateAnalyzed, FK_ModelID_LSTM, FK_ModelID_LR,
+         LSTM_Sentiment, LR_Sentiment, LSTM_Confidence, Flagged_For_Review)
+        VALUES (%s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+    """, (
+        str(int(time.time())),   # simple unique TweetID substitute
+        input.text,
+        "LSTM_v1.0",
+        "LR_v1.0",
+        lstm_pred[0],
+        baseline_pred,
+        conf[0],
+        lstm_pred[0] != baseline_pred   # flag if models disagree
+    ))
+    conn.commit()
+    conn.close()
+
     return {
         "timestamp": datetime.datetime.now().isoformat(),
         "baseline_prediction": baseline_pred,
@@ -112,18 +134,41 @@ async def bulk_predict(file: UploadFile = File(...)):
     if text_col != "text":
         df.rename(columns={text_col: "text"}, inplace=True)
 
+    # Run predictions
     df["baseline_prediction"] = predict_baseline_batch(df["text"].tolist())
     lstm_labels, lstm_confs = predict_lstm_batch(df["text"].tolist())
     df["lstm_prediction"] = lstm_labels
     df["confidence"] = lstm_confs
 
+  
+    conn = get_connection()
+    cursor = conn.cursor()
+    for i, row in df.iterrows():
+        cursor.execute("""
+            INSERT INTO ANALYSIS_RECORD
+            (TweetID, TweetText, DateAnalyzed, FK_ModelID_LSTM, FK_ModelID_LR,
+             LSTM_Sentiment, LR_Sentiment, LSTM_Confidence, Flagged_For_Review)
+            VALUES (%s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+        """, (
+            str(i),                          
+            row["text"],                     
+            "LSTM_v1.0",                     
+            "LR_v1.0",
+            row["lstm_prediction"],          
+            row["baseline_prediction"],      
+            row["confidence"],               
+            row["lstm_prediction"] != row["baseline_prediction"]  
+        ))
+    conn.commit()
+    conn.close()
+
+    # Return CSv
     buf = io.StringIO()
     df.to_csv(buf, index=False)
     buf.seek(0)
 
     return StreamingResponse(buf, media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=bulk_predictions.csv"})
-
 
 # C1: Analytics — Summary Stats
 
@@ -228,11 +273,13 @@ def analytics_model_compare():
 
     set_cache("model_compare", result)
     return JSONResponse(content=result)
-@app.get("/test-db")
-def test_db():
+
+
+@app.get("/analysis_records")
+def get_records():
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT NOW();")
-    result = cur.fetchone()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM ANALYSIS_RECORD LIMIT 10")
+    results = cursor.fetchall()
     conn.close()
-    return {"db_time": result[0]}
+    return results

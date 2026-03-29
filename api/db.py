@@ -1,5 +1,10 @@
-import os
-import psycopg2
+import mysql.connector
 
 def get_connection():
-    return psycopg2.connect(os.environ["postgresql://sentiment_analysis_postgres_k887_user:9wBfmi5tsASZxfDHoh2l6kqDmaWs31GW@dpg-d745kduuk2gs739vmlgg-a/sentiment_analysis_postgres_k887"])
+    connection = mysql.connector.connect(
+        host="localhost",    
+        user="root",            
+        password="",            
+        database="safaricom_sentiment"
+    )
+    return connection
